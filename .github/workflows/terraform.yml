@@ -1,0 +1,67 @@
+#Name of the actions workflow
+name: 'Terraform'
+
+#Configuration state
+on:
+ push:
+   branches:
+      - main
+
+#Defines a terraform job
+jobs:
+   terraform:
+      name: 'terraform'
+      runs-on: ubuntu-latest
+      steps:
+
+#Checkout
+      - name: checkout code
+        uses: action/checkout@v3
+
+#download terraform 
+      - name: download terraform
+        run: |
+              version=$(curl --silent https://releases.hashicorp.com/index.json | jq -r ' .terraform.versions[].version' | gep -v 'beta' | sort -v | tail -1)
+              curl htpps://releases.hashicorp.com/teraform/${VERSION)/terraform_${VERSION}_linux_amd64.zip -o
+              unzip terraform.zip
+              sudo mv terraform usr/local/bin
+              rm terraform.zip
+
+#terraform setup
+      - name: terraform setup
+        uses: hashicorp/setup_terraform@v1
+        with:
+             cli_config_credential_hostname: 'tfe.ops.aws.shell.io'
+             cli_config_credential_token: ${{ secrets.API_Token }}
+
+#setup environmental variables
+      - name: setup enivironmental variables
+        run:  
+         echo "ARM_TENENET_ID=${{ secrets.ARM_TENENET_ID}}" >> $GITHUB_ENV
+         echo "ARM_CLIENT_ID=${{ secrets.ARM_CLIENT_ID}}" >> $GITHUB_ENV
+         echo "ARM_CLIENT_SECRET_ID=${{ secrets.ARM_CLIENT_SECRET}}" >> $GITHUB_ENV
+         echo "ARM_SUBSCRIPTION_ID=${{secrets.ARM_SUBSCRIPTION_ID}}" >> $GITHUB_ENV
+         echo "STORAGE_ACCOUNT_NAME=${{secrets.STORAGE_ACCOUNT-NAME}}" >> $GITHUB_ENV
+         echo "SORAGE_ACCOUNT_PRIMARY_KEY{{secrets.STORAGE_ACCOUNT_PRIMARY_KEY}}" >> $GITHUB_ENV
+
+#terraform format
+      - name: terraform format
+        id: fmt
+        run: terraform_check
+
+#terraform_Initialize
+      - name: terraform #terraform_init
+        id: init        
+        run: terraform init
+
+#terraform validate 
+      - name: teraform validate
+        id: validate
+        run: terraform validate
+
+#terrform plan
+      - name: terraform plan
+        id: plan
+        run: terraform plan
+
+#
